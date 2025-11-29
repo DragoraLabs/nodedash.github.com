@@ -1,27 +1,62 @@
-<!DOCTYPE html><html class="h-full bg-gray-900 text-white"><head><script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script></head>
-<body class="h-screen flex"><aside class="w-80 bg-gray-800 p-10">
-<h1 class="text-5xl font-bold text-purple-400 mb-16">NODEDASH</h1>
-<a href="/" class="block p-6 bg-purple-600 rounded-2xl text-2xl">Dashboard</a>
-<a href="/files" class="block p-6 hover:bg-gray-700 rounded-2xl text-2xl mt-4">Files</a>
-<a href="/plugin/uptime" class="block p-6 hover:bg-gray-700 rounded-2xl text-2xl mt-4">Uptime</a>
-</aside>
-<main class="flex-1 p-16">
-<h1 class="text-8xl font-bold mb-10">System</h1>
-<div class="grid grid-cols-3 gap-8 mb-16">
-<div class="bg-gray-800 p-10 rounded-3xl"><h2 class="text-4xl">CPU</h2><p class="text-7xl" id="cpu">0%</p></div>
-<div class="bg-gray-800 p-10 rounded-3xl"><h2 class="text-4xl">RAM</h2><p class="text-7xl" id="ram">0%</p></div>
-</div>
-<div class="bg-gray-800 p-12 rounded-3xl">
-<h2 class="text-5xl mb-8">Minecraft <span id="status" class="text-red-400">OFFLINE</span></h2>
-<button id="start" onclick="fetch('/api/start').then(()=>setTimeout(s,5000))" class="px-12 py-6 bg-green-600 text-4xl rounded-2xl">START</button>
-<button onclick="fetch('/api/stop').then(()=>setTimeout(s,3000))" class="px-12 py-6 bg-red-600 text-4xl rounded-2xl ml-8">STOP</button>
-</div>
-</main>
-<script>
-const socket = io();
-socket.on('stats', d=>{ document.getElementById('cpu').textContent=d.cpu+'%'; document.getElementById('ram').textContent=d.ram+'%'; });
-function s(){ fetch('/api/status').then(r=>r.json()).then(d=>{ document.getElementById('status').textContent = d.running?'ONLINE':'OFFLINE'; document.getElementById('status').className = d.running?'text-green-400':'text-red-400'; }); }
-setInterval(s,4000); s();
-</script>
-</body></html>
+<!DOCTYPE html>
+<html class="h-full bg-gradient-to-br from-gray-900 to-purple-900 text-white">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NodeDash</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body class="h-screen flex">
+  <aside class="w-64 bg-black/50 backdrop-blur p-8">
+    <h1 class="text-4xl font-bold text-purple-400 mb-12">NodeDash</h1>
+    <a href="/" class="block p-4 bg-purple-600 rounded-xl mb-4 text-xl">Dashboard</a>
+    <a href="/files" class="block p-4 hover:bg-white/10 rounded-xl mb-4 text-xl">minecraft_server Files</a>
+    <a href="/uptime" class="block p-4 hover:bg-white/10 rounded-xl mb-4 text-xl">Uptime</a>
+  </aside>
+  <main class="flex-1 p-12">
+    <h1 class="text-7xl font-bold mb-12">System Dashboard</h1>
+    <div class="grid grid-cols-3 gap-8 mb-16">
+      <div class="bg-white/10 backdrop-blur rounded-3xl p-10">
+        <h2 class="text-3xl mb-4">CPU</h2>
+        <p class="text-8xl" id="cpu">0%</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-3xl p-10">
+        <h2 class="text-3xl mb-4">RAM</h2>
+        <p class="text-8xl" id="ram">0%</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-3xl p-10">
+        <h2 class="text-3xl mb-4">Disk</h2>
+        <p class="text-8xl" id="disk">0%</p>
+      </div>
+    </div>
+    <div class="bg-white/10 backdrop-blur rounded-3xl p-12">
+      <h2 class="text-5xl mb-8">Minecraft Server</h2>
+      <button onclick="fetch('/api/mc/start')"
+        class="px-12 py-6 bg-green-600 hover:bg-green-500 rounded-2xl text-3xl mr-8">Start Server</button>
+      <button onclick="fetch('/api/mc/stop')" class="px-12 py-6 bg-red-600 hover:bg-red-500 rounded-2xl text-3xl">Stop
+        Server</button>
+      <p class="mt-8 text-2xl">Status: <span id="status" class="text-red-400">Checking...</span></p>
+    </div>
+  </main>
+  <script>
+    const socket = io();
+    socket.on('stats', d => {
+      document.getElementById('cpu').textContent = d.cpu + '%';
+      document.getElementById('ram').textContent = d.ram + '%';
+      document.getElementById('disk').textContent = d.disk + '%';
+    });
+    function updateStatus() {
+      fetch('/api/mc/status').then(r => r.json()).then(d => {
+        document.getElementById('status').textContent = d.running ? 'ONLINE' : 'OFFLINE';
+        document.getElementById('status').className = d.running ? 'text-green-400' : 'text-red-400';
+      });
+    }
+    setInterval(updateStatus, 5000); updateStatus();
+  </script>
+</body>
+
+</html>

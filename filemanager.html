@@ -1,20 +1,75 @@
 <!DOCTYPE html>
-<html class="h-full bg-gray-900 text-white">
+<html class="h-full bg-gradient-to-br from-gray-900 to-purple-900 text-white">
 
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>File Manager - minecraft_server</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body class="h-screen flex">
-  <aside class="w-80 bg-gray-800 p-10">
-    <h1 class="text-5xl font-bold text-purple-400 mb-16">NODEDASH</h1>
-    <a href="/" class="block p-6 hover:bg-gray-700 rounded-2xl text-2xl">Dashboard</a>
-    <a href="/files" class="block p-6 bg-purple-600 rounded-2xl text-2xl mt-4">Files</a>
+  <aside class="w-64 bg-black/50 backdrop-blur p-8">
+    <h1 class="text-4xl font-bold text-purple-400 mb-12">NodeDash</h1>
+    <a href="/" class="block p-4 hover:bg-white/10 rounded-xl mb-4 text-xl">Dashboard</a>
+    <a href="/files" class="block p-4 bg-purple-600 rounded-xl mb-4 text-xl">minecraft_server Files</a>
+    <a href="/uptime" class="block p-4 hover:bg-white/10 rounded-xl mb-4 text-xl">Uptime</a>
   </aside>
-  <main class="flex-1 p-16">
-    <h1 class="text-7xl font-bold mb-10">File Manager</h1>
-    <div class="bg-gray-800 p-10 rounded-3xl">WORKING SOON</div>
+  <main class="flex-1 p-12">
+    <h1 class="text-6xl font-bold mb-10">minecraft_server File Manager</h1>
+    <div class="bg-white/10 backdrop-blur rounded-3xl p-8">
+      <div class="flex gap-4 mb-8">
+        <input type="file" id="upload" multiple class="hidden">
+        <button onclick="document.getElementById('upload').click()"
+          class="px-8 py-4 bg-blue-600 rounded-xl text-xl">Upload</button>
+      </div>
+      <table class="w-full text-left">
+        <thead class="border-b border-purple-400">
+          <tr>
+            <th class="py-4">Name</th>
+            <th class="py-4">Size</th>
+            <th class="py-4">Modified</th>
+            <th class="py-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="list"></tbody>
+      </table>
+    </div>
   </main>
+  <script>
+    async function load() {
+      const res = await fetch('/api/files');
+      const files = await res.json();
+      document.getElementById('list').innerHTML = files.map(f => `
+        <tr class="border-b border-white/10">
+          <td class="py-6">${f.isDir ? '<i class="fas fa-folder text-yellow-400 mr-3"></i>' : ''}${f.name}</td>
+          <td class="py-6">${f.size}</td>
+          <td class="py-6">${f.mtime}</td>
+          <td class="py-6">
+            ${!f.isDir ? `<a href="/minecraft_server/${f.path}" class="text-cyan-400 mr-4">Download</a>` : ''}
+            <button onclick="rename('${f.path}', '${f.name}')" class="text-yellow-400 mr-4">Rename</button>
+            <button onclick="del('${f.path}')" class="text-red-400">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+    async function del(p) { if (confirm('Delete?')) await fetch('/api/delete', { method: 'POST', body: JSON.stringify({ path: p }), headers: { 'Content-Type': 'application/json' } }); load(); }
+    async function rename(p, oldName) {
+      const newName = prompt('New name:', oldName);
+      if (newName && newName !== oldName) {
+        await fetch('/api/rename', { method: 'POST', body: JSON.stringify({ old: p, new: p.replace(oldName, newName) }), headers: { 'Content-Type': 'application/json' } });
+        load();
+      }
+    }
+    document.getElementById('upload').onchange = async e => {
+      const form = new FormData();
+      for (let f of e.target.files) form.append('files', f);
+      await fetch('/api/upload', { method: 'POST', body: form });
+      load();
+    };
+    load(); setInterval(load, 10000);
+  </script>
 </body>
 
 </html>
