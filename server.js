@@ -4,68 +4,74 @@ const { Server } = require('socket.io');
 const si = require('systeminformation');
 const path = require('path');
 const fs = require('fs-extra');
-const multer = require('multer');
+const { execSync } = require('child_process');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const upload = multer({ dest: 'storage' });
 app.use(express.json());
 app.use(express.static(__dirname));
-app.use('/storage', express.static(path.join(__dirname, 'storage')));
 
-// PAGES
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'dashboard.html')));
+// Auto redirect to setup if no config
+app.get('/', (req, res) => {
+  if (!fs.existsSync('minecraft_config.json')) return res.redirect('/setup');
+  res.sendFile(path.join(__dirname, 'dashboard.html'));
+});
+
+app.get('/setup', (req, res) => res.sendFile(path.join(__dirname, 'setup.html')));
 app.get('/files', (req, res) => res.sendFile(path.join(__dirname, 'filemanager.html')));
-app.get('/setup-minecraft', (req, res) => res.sendFile(path.join(__dirname, 'setup.html')));
+app.get('/plugin/uptime', (req, res) => res.sendFile(path.join(__dirname, 'uptime.html')));
 
-// PLUGINS
-require('./plugins/uptime')(app);
-require('./plugins/minecraft')(app);
+// Minecraft API
+app.post('/api/setup', (req, res) => {
+  fs.writeJsonSync('minecraft_config.json', req.body);
+  fs.writeFileSync('Dockerfile', `FROM eclipse-temurin:21-jdk-alpine
+RUN apk add --no-cache curl jq tini
+WORKDIR /data
+VOLUME /data
+EXPOSE 25565
+ENTRYPOINT ["/sbin/tini","--"]
+CMD sh -c '
+echo "eula=true">eula.txt
+if [ ! -f paper.jar ]; then
+  BUILD=$(curl -s https://api.papermc.io/v2/projects/paper/versions/${req.body.version}|jq -r ".builds[-1]")
+  curl -fsSL -o paper.jar https://api.papermc.io/v2/projects/paper/versions/${req.body.version}/builds/$BUILD/downloads/paper-${req.body.version}-$BUILD.jar
+fi
+java -Xmx4G -jar paper.jar --nogui
+'
+COPY minecraft_server /data`);
+  res.json({ok:true});
+});
 
-// FILE MANAGER API
-app.get('/api/files/list', async (req, res) => {
-  const dir = req.query.dir || '/';
-  const full = path.join(__dirname, 'storage', dir === '/' ? '' : dir);
+app.get('/api/status', (req, res) => {
   try {
-    const files = await fs.readdir(full);
-    const list = await Promise.all(files.map(async name => {
-      const p = path.join(full, name);
-      const stat = await fs.stat(p);
-      return {
-        name,
-        path: dir === '/' ? `/${name}` : `${dir}/${name}`,
-        isDir: stat.isDirectory(),
-        size: stat.isDirectory() ? '-' : (stat.size / 1024 / 1024).toFixed(2) + ' MB',
-        mtime: stat.mtime
-      };
-    }));
-    res.json(list.sort((a, b) => b.isDir - a.isDir));
-  } catch { res.json([]); }
+    const running = execSync('docker ps --filter name=^minecraft$ --format "{{.Names}}"').toString().trim();
+    res.json({running: !!running});
+  } catch { res.json({running: false}); }
 });
 
-app.post('/api/files/upload', upload.array('files'), (req, res) => {
-  res.json({ ok: true });
+app.get('/api/start', (req, res) => {
+  execSync('docker build -t mc .');
+  execSync('docker run -d --name minecraft -p 25565:25565 -v minecraft_server:/data mc');
+  res.json({ok:true});
 });
 
-app.post('/api/files/delete', async (req, res) => {
-  await fs.remove(path.join(__dirname, 'storage', req.body.path));
-  res.json({ ok: true });
+app.get('/api/stop', (req, res) => {
+  execSync('docker stop minecraft || true; docker rm minecraft || true');
+  res.json({ok:true});
 });
 
-// STATS
+// Stats
 setInterval(async () => {
   try {
-    const [l, m, d] = await Promise.all([si.currentLoad(), si.mem(), si.fsSize()]);
+    const [load, mem] = await Promise.all([si.currentLoad(), si.mem()]);
     io.emit('stats', {
-      cpu: l.currentLoad.toFixed(1),
-      ram: ((m.used / m.total) * 100).toFixed(1),
-      ramTotal: (m.total / 1024 ** 3).toFixed(1),
-      disk: d[0] ? ((d[0].used / d[0].size) * 100).toFixed(1) : 0,
-      diskTotal: d[0] ? (d[0].size / 1024 ** 3).toFixed(1) : 0
+      cpu: load.currentLoad.toFixed(1),
+      ram: ((mem.used/mem.total)*100).toFixed(1),
+      ramTotal: (mem.total/1024**3).toFixed(1)
     });
-  } catch (e) { }
+  } catch {}
 }, 2000);
 
 server.listen(3000, () => console.log('LIVE → http://localhost:3000'));

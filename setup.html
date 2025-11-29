@@ -1,52 +1,16 @@
-<!DOCTYPE html>
-<html class="h-full bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Minecraft Setup</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-
+<!DOCTYPE html><html class="h-full bg-gray-900 text-white"><head><script src="https://cdn.tailwindcss.com"></script></head>
 <body class="h-screen flex items-center justify-center">
-  <div class="bg-gray-900 bg-opacity-90 p-16 rounded-3xl shadow-2xl max-w-2xl">
-    <h1
-      class="text-7xl font-bold text-center mb-16 bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
-      Minecraft Server</h1>
-    <div class="space-y-12">
-      <div class="grid grid-cols-2 gap-10">
-        <label
-          class="bg-gradient-to-br from-purple-700 to-pink-700 p-12 rounded-3xl text-center cursor-pointer hover:scale-105 transition">
-          <input type="radio" name="type" value="paper" checked class="hidden">
-          <div class="text-8xl mb-6">Paper</div>
-          <p class="text-2xl">Best for plugins</p>
-        </label>
-        <label
-          class="bg-gradient-to-br from-indigo-700 to-purple-700 p-12 rounded-3xl text-center cursor-pointer hover:scale-105 transition">
-          <input type="radio" name="type" value="fabric" class="hidden">
-          <div class="text-8xl mb-6">Fabric</div>
-          <p class="text-2xl">Best for mods</p>
-        </label>
-      </div>
-      <select id="ver" class="w-full p-8 text-3xl bg-gray-800 rounded-2xl">
-        <option>1.21.3</option>
-        <option>1.21.1</option>
-        <option>1.20.6</option>
-      </select>
-      <button onclick="setup()"
-        class="w-full py-10 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 rounded-3xl text-5xl font-bold shadow-2xl">
-        CREATE SERVER
-      </button>
-    </div>
-  </div>
-  <script>
-    function setup() {
-      const type = document.querySelector('input[name="type"]:checked').value;
-      const version = document.getElementById('ver').value;
-      fetch('/api/mc/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, version }) })
-        .then(() => location.href = '/');
-    }
-  </script>
-</body>
-
-</html>
+<div class="bg-gray-800 p-16 rounded-3xl">
+<h1 class="text-6xl font-bold mb-10 text-center">Minecraft Setup</h1>
+<div class="space-y-8">
+<div class="grid grid-cols-2 gap-8">
+<label class="bg-gray-700 p-12 rounded-3xl text-center cursor-pointer"><input type="radio" name="type" value="paper" checked class="hidden"><div class="text-8xl">Paper</div></label>
+<label class="bg-gray-700 p-12 rounded-3xl text-center cursor-pointer"><input type="radio" name="type" value="fabric" class="hidden"><div class="text-8xl">Fabric</div></label>
+</div>
+<select id="ver" class="w-full p-6 text-3xl bg-gray-700 rounded-2xl">
+<option>1.21.3</option><option>1.21.1</option><option>1.20.6</option>
+</select>
+<button onclick="fetch('/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'paper',version:document.getElementById('ver').value})}).then(()=>location.href='/')" class="w-full py-8 bg-green-600 text-4xl rounded-3xl">
+CREATE SERVER
+</button>
+</div></div></body></html>

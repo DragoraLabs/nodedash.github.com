@@ -1,7 +1,19 @@
-<%- include('layout', { path: '/plugin/uptime' , body: /*html*/` <div class="space-y-4">
-  <h1 class="text-2xl font-bold">Server Uptime</h1>
-  <p class="text-4xl text-green-400">
-    <%= uptime %> hours
-  </p>
+<!DOCTYPE html>
+<html class="h-full bg-black text-white">
+
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="h-screen flex items-center justify-center">
+  <div class="text-center">
+    <h1 class="text-9xl font-bold text-cyan-400" id="up">00:00:00</h1>
+    <p class="text-5xl text-green-400">SERVER ALIVE</p>
   </div>
-  ` }) %>
+  <script>
+    const start = Date.now();
+    setInterval(() => { let s = Math.floor((Date.now() - start) / 1000); const h = String(Math.floor(s / 3600)).padStart(2, '0'); const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0'); const sec = String(s % 60).padStart(2, '0'); document.getElementById('up').textContent = h + ':' + m + ':' + sec; }, 1000);
+  </script>
+</body>
+
+</html>
