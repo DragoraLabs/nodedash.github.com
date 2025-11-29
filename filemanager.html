@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html class="h-full bg-gradient-to-br from-gray-900 via-indigo-900 to-black text-white">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>File Manager - Premium</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .glass {
+      backdrop-filter: blur(20px);
+      background: rgba(20, 20, 40, 0.6);
+      border: 1px solid rgba(120, 120, 255, 0.3);
+    }
+  </style>
+</head>
+
+<body class="h-screen flex">
+  <aside class="w-80 glass p-10 border-r border-purple-500/30">
+    <h1 class="text-5xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-16">
+      NODEDASH</h1>
+    <nav class="space-y-6">
+      <a href="/" class="flex items-center gap-5 p-6 rounded-2xl hover:bg-white/10 transition text-xl">Dashboard</a>
+      <a href="/files"
+        class="flex items-center gap-5 p-6 bg-gradient-to-r from-purple-600/50 rounded-2xl text-xl font-bold">File
+        Manager</a>
+      <a href="/plugin/uptime"
+        class="flex items-center gap-5 p-6 rounded-2xl hover:bg-white/10 transition text-xl">Uptime</a>
+    </nav>
+  </aside>
+
+  <main class="flex-1 p-16">
+    <h1 class="text-7xl font-black mb-16 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+      File Explorer
+    </h1>
+
+    <div class="glass p-10 rounded-3xl shadow-2xl">
+      <div class="flex justify-between items-center mb-10">
+        <input id="upload" type="file" multiple class="hidden">
+        <button onclick="document.getElementById('upload').click()"
+          class="px-12 py-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl font-bold text-2xl hover:scale-105 transition shadow-xl">
+          UPLOAD FILES
+        </button>
+      </div>
+
+      <div class="mt-10">
+        <table class="w-full">
+          <thead class="text-left">
+            <tr class="border-b border-purple-500/30">
+              <th class="py-6 text-2xl>Name</th>
+              <th class=" py-6 text-2xl">Size</th>
+              <th class="py-6 text-2xl">Modified</th>
+              <th class="py-6 text-2xl">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="list" class="divide-y divide-purple-500/20 text-lg"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Same script as before but with premium styling
+    async function load() {
+      const res = await fetch('/api/files/list');
+      const files = await res.json();
+      document.getElementById('list').innerHTML = files.map(f => `
+        <tr class="hover:bg-white/5 transition">
+          <td class="py-8 flex items-center gap-4">
+            <span class="text-4xl">${f.isDir ? 'Folder' : 'File'}</span>
+            <span class="font-bold">${f.name}</span>
+          </td>
+          <td class="py-8">${f.size}</td>
+          <td class="py-8">${new Date(f.mtime).toLocaleString()}</td>
+          <td class="py-8">
+            ${!f.isDir ? `<a href="/storage${f.path}" class="text-cyan-400 mr-8">Download</a>` : ''}
+            <button onclick="del('${f.path}')" class="text-red-400 font-bold">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+    async function del(p) { if (confirm('Delete forever?')) await fetch('/api/files/delete', { method: 'POST', body: JSON.stringify({ path: p }), headers: { 'Content-Type': 'application/json' } }); load(); }
+    document.getElementById('upload').onchange = async e => {
+      const f = new FormData();
+      for (let file of e.target.files) f.append('files', file);
+      await fetch('/api/files/upload', { method: 'POST', body: f });
+      load();
+    };
+    load();
+    setInterval(load, 8000);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html class="h-full bg-gradient-to-br from-gray-900 via-purple-900 to-black text-white">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NodeDash Premium</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .glass {
+      backdrop-filter: blur(16px);
+      background: rgba(30, 30, 50, 0.5);
+      border: 1px solid rgba(100, 100, 255, 0.2);
+    }
+
+    .glow {
+      box-shadow: 0 0 40px rgba(100, 100, 255, 0.3);
+    }
+  </style>
+</head>
+
+<body class="h-screen overflow-hidden">
+
+  <!-- Background Effects -->
+  <div class="fixed inset-0 pointer-events-none">
+    <div class="absolute inset-0 bg-gradient-to-t from-purple-900/50 to-transparent"></div>
+    <div class="absolute top-0 left-0 w-96 h-96 bg-purple-600 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+    <div
+      class="absolute bottom-0 right-0 w-96 h-96 bg-blue-600 rounded-full blur-3xl opacity-20 animate-pulse delay-1000">
+    </div>
+  </div>
+
+  <div class="flex h-full relative z-10">
+    <!-- Sidebar -->
+    <aside class="w-80 glass p-10 border-r border-purple-500/30">
+      <h1 class="text-5xl font-black bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-16">
+        NODEDASH</h1>
+      <nav class="space-y-4">
+        <a href="/"
+          class="flex items-center gap-5 p-6 bg-gradient-to-r from-purple-600/30 rounded-2xl text-xl font-bold glow">
+          <span class="text-3xl">Dashboard</span>
+        </a>
+        <a href="/files" class="flex items-center gap-5 p-6 rounded-2xl hover:bg-white/5 text-xl transition">
+          <span class="text-3xl">File Manager</span>
+        </a>
+        <a href="/plugin/uptime" class="flex items-center gap-5 p-6 rounded-2xl hover:bg-white/5 text-xl transition">
+          <span class="text-3xl">Uptime</span>ptime
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 p-12 overflow-y-auto">
+      <h1 class="text-7xl font-black mb-16 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+        System Overview
+      </h1>
+
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+        <div class="glass p-10 rounded-3xl glow">
+          <div class="flex justify-between items-start mb-8">
+            <h3 class="text-3xl font-bold">CPU Usage</h3>
+            <span class="text-6xl text-blue-400">CPU</span>
+          </div>
+          <p class="text-8xl font-black text-blue-400" id="cpu">0%</p>
+          <div class="mt-8 h-8 bg-white/10 rounded-full overflow-hidden">
+            <div id="cpu-bar"
+              class="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-1000"
+              style="width:0%"></div>
+          </div>
+        </div>
+
+        <div class="glass p-10 rounded-3xl glow">
+          <div class="flex justify-between items-start mb-8">
+            <h3 class="text-3xl font-bold">Memory</h3>
+            <span class="text-6xl text-green-400">RAM</span>
+          </div>
+          <p class="text-8xl font-black text-green-400" id="ram">0%</p>
+          <p class="text-2xl text-gray-300 mt-4" id="ram-total"></p>
+          <div class="mt-8 h-8 bg-white/10 rounded-full overflow-hidden">
+            <div id="ram-bar"
+              class="h-full bg-gradient-to-r from-green-500 to-teal-500 rounded-full transition-all duration-1000"
+              style="width:0%"></div>
+          </div>
+        </div>
+
+        <div class="glass p-10 rounded-3xl glow">
+          <div class="flex justify-between items-start mb-8">
+            <h3 class="text-3xl font-bold">Storage</h3>
+            <span class="text-6xl text-orange-400">HDD</span>
+          </div>
+          <p class="text-8xl font-black text-orange-400" id="disk">0%</p>
+          <p class="text-2xl text-gray-300 mt-4" id="disk-total"></p>
+          <div class="mt-8 h-8 bg-white/10 rounded-full overflow-hidden">
+            <div id="disk-bar"
+              class="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all duration-1000"
+              style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Minecraft Panel -->
+      <div class="glass p-12 rounded-3xl glow">
+        <h2
+          class="text-5xl font-black mb-10 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+          Minecraft Server <span id="mc-status" class="text-4xl font-normal text-red-400">OFFLINE</span>
+        </h2>
+        <div class="grid lg:grid-cols-3 gap-10">
+          <div>
+            <button id="mc-start" onclick="fetch('/api/mc/start')"
+              class="w-full py-8 text-4xl font-black bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl hover:scale-105 transition shadow-2xl">
+              START SERVER
+            </button>
+            <button id="mc-stop" onclick="fetch('/api/mc/stop')" disabled
+              class="w-full py-8 mt-6 text-4xl font-black bg-gradient-to-r from-red-600 to-pink-600 rounded-3xl opacity-50">
+              STOP SERVER
+            </button>
+          </div>
+
+          <div class="space-y-6">
+            <h3 class="text-3xl font-bold">Install Plugin</h3>
+            <div class="flex gap-4">
+              <input id="plugin-search" placeholder="LuckPerms, Geyser..."
+                class="flex-1 px-8 py-6 bg-black/40 rounded-2xl text-xl">
+              <button onclick="searchPlugin()"
+                class="px-10 py-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl font-bold text-xl">Search</button>
+            </div>
+            <div id="plugin-results" class="space-y-4 max-h-96 overflow-y-auto"></div>
+          </div>
+
+          <div>
+            <h3 class="text-3xl font-bold">Installed</h3>
+            <div id="installed-list" class="mt-6 grid grid-cols-2 gap-6">
+              <p class="col-span-2 text-center py-12 text-gray-500">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const socket = io();
+    socket.on('stats', d => {
+      ['cpu', 'ram', 'disk'].forEach(k => {
+        document.getElementById(k).textContent = d[k] + '%';
+        document.getElementById(k + '-bar').style.width = d[k] + '%';
+      });
+      document.getElementById('ram-total').textContent = 'Total: ' + d.ramTotal + ' GB';
+      document.getElementById('disk-total').textContent = 'Total: ' + d.diskTotal + ' GB';
+    });
+
+    async function loadInstalled() {
+      const res = await fetch('/api/mc/installed');
+      const items = await res.json();
+      document.getElementById('installed-list').innerHTML = items.length ? items.map(i => `
+        <div class="bg-black/40 p-6 rounded-2xl border border-purple-500/30">
+          <div class="font-bold text-xl">${i.name.replace('.jar', '')}</div>
+          <p class="text-green-400">${i.size}</p>
+          <button onclick="fetch('/api/mc/remove',{method:'POST',body:JSON.stringify({name:'${i.name}'}),headers:{'Content-Type':'application/json'}}).then(()=>loadInstalled())" class="mt-4 text-red-400">Remove</button>
+        </div>
+      `).join('') : '<p class="col-span-2 text-center text-gray-500">No plugins/mods yet</p>';
+    }
+
+    function searchPlugin() {
+      const q = document.getElementById('plugin-search').value;
+      fetch(`https://api.modrinth.com/v2/search?query=${q}&facets=[["project_type:plugin"]]`).then(r => r.json()).then(d => {
+        document.getElementById('plugin-results').innerHTML = d.hits.slice(0, 6).map(p => `
+          <div class="bg-black/40 p-5 rounded-xl flex justify-between items-center border border-purple-500/20">
+            <div>
+              <div class="font-bold">${p.title}</div>
+              <div class="text-sm text-gray-400">${p.downloads.toLocaleString()} downloads}</div>
+            </div>
+            <button onclick="fetch('/api/mc/install-plugin',{method:'POST',body:JSON.stringify({id:'${p.project_id}'}),headers:{'Content-Type':'application/json'}}).then(()=>loadInstalled())" class="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl font-bold">Install</button>
+          </div>
+        `).join('');
+      });
+    }
+
+    // Status polling
+    setInterval(async () => {
+      const r = await fetch('/api/mc/status');
+      const d = await r.json();
+      const status = document.getElementById('mc-status');
+      status.textContent = d.running ? 'ONLINE' : 'OFFLINE';
+      status.className = d.running ? 'text-4xl font-normal text-green-400' : 'text-4xl font-normal text-red-400';
+      document.getElementById('mc-start').disabled = d.running;
+      document.getElementById('mc-stop').disabled = !d.running;
+    }, 4000);
+
+    loadInstalled();
+  </script>
+</body>
+
+</html>
